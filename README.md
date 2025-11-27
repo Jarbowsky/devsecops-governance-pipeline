@@ -44,4 +44,36 @@ Cloud Security Engineer portfolio project demonstrating:
 Senior Information Security Specialist → Cloud Security Engineer
 
 **Background:**
-- Vulnerability governance & r
+- Vulnerability governance & risk assessment
+- Qualys/Sysdig experience
+- Container security
+- Security processes & compliance
+
+**Learning path:**
+- AWS Security fundamentals
+- DevSecOps automation
+- AI-driven security tools
+
+## Timeline
+- **Start:** November 25, 2025
+- **Target completion:** May 25, 2026 (6 months)
+- **Current phase:** Sprint 0 - Foundation & Setup
+
+## Progress
+- [x] Project setup
+- [x] AWS Free Tier account
+- [x] Repository structure
+- [ ] Local development environment
+- [ ] First Terraform deployment
+- [ ] Container scanning pipeline
+- [ ] CI/CD security gates
+- [ ] Observability stack
+- [ ] AI integration
+- [ ] Documentation & case studies
+
+## License
+MIT
+
+---
+
+*This is a portfolio project demonstrating practical Cloud Security Engineering skills.*
