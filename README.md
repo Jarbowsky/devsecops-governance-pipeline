@@ -1,20 +1,47 @@
-# Pipeline DevSecOps z zarządzaniem podatnościami opartym o sztuczną inteligencję
+# AI-Driven Secure DevOps & Vulnerability Governance Pipeline
 
 ## Status
-🚧 W trakcie budowy - Sprint 0
+🚧 Work in Progress - Sprint 0
 
-## Cel
-Projekt portfolio na stanowisko Cloud Security Engineer
+## Goal
+Cloud Security Engineer portfolio project demonstrating:
+- AWS security architecture
+- Infrastructure as Code (Terraform)
+- Container security automation
+- CI/CD security pipelines
+- AI-powered vulnerability management
+- Security observability
 
-## Stack technologiczny
-AWS | Terraform | Docker | Trivy | Sysdig | GitHub Actions | Loki | Prometheus | Grafana | Integracja AI
+## Tech Stack
+**Cloud & Infrastructure:**
+- AWS (VPC, IAM, CloudTrail, GuardDuty, Config)
+- Terraform
 
-## Architektura
-(będzie uzupełnione w następnych sprintach)
+**Container Security:**
+- Docker
+- Trivy (vulnerability scanning)
+- Sysdig (runtime security)
 
-## Autor
-Tomasz Chyła - Senior Information Security Specialist → Cloud Security Engineer
+**CI/CD & Automation:**
+- GitHub Actions
+- Security gates & SBOM generation
 
-## Timeline
-Start: 25 listopada 2025
-Cel: 25 maja 2026 (6 miesięcy)
+**Observability:**
+- Loki (log aggregation)
+- Prometheus (metrics)
+- Grafana (dashboards)
+- Telegram (ChatOps alerts)
+
+**AI Integration:**
+- LLM-powered risk scoring
+- Automated security reporting
+- Intelligent vulnerability prioritization
+
+## Architecture
+(will be added in upcoming sprints)
+
+## Author
+Senior Information Security Specialist → Cloud Security Engineer
+
+**Background:**
+- Vulnerability governance & r
