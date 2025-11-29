@@ -64,7 +64,8 @@ Senior Information Security Specialist → Cloud Security Engineer
 - [x] AWS Free Tier account
 - [x] Repository structure
 - [x] Local development environment
-- [ ] First Terraform deployment
+- [x] First Terraform deployment (VPC test)
+- [ ] AWS Security Baseline (IAM + VPC)
 - [ ] Container scanning pipeline
 - [ ] CI/CD security gates
 - [ ] Observability stack
