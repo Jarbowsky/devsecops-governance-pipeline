@@ -1,4 +1,4 @@
-# AI-Driven Secure DevOps & Vulnerability Governance Pipeline
+# AI-Driven Secure DevSecOps & Vulnerability Governance Pipeline
 
 ## Status
 🚧 Work in Progress - Sprint 0
@@ -38,7 +38,7 @@ Cloud Security Engineer portfolio project demonstrating:
 - Intelligent vulnerability prioritization
 
 ## Architecture
-(will be added in upcoming sprints)
+See [docs/architecture.md](docs/architecture.md) for detailed architecture overview.
 
 ## Author
 Senior Information Security Specialist → Cloud Security Engineer
@@ -63,7 +63,7 @@ Senior Information Security Specialist → Cloud Security Engineer
 - [x] Project setup
 - [x] AWS Free Tier account
 - [x] Repository structure
-- [ ] Local development environment
+- [x] Local development environment
 - [ ] First Terraform deployment
 - [ ] Container scanning pipeline
 - [ ] CI/CD security gates
@@ -77,3 +77,4 @@ MIT
 ---
 
 *This is a portfolio project demonstrating practical Cloud Security Engineering skills.*
+```
