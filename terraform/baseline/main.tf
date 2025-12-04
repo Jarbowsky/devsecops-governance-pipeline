@@ -8,7 +8,7 @@ terraform {
     }
     # Dodajemy providera HTTP
     http = {
-      source  = "hashicorp/http"
+      source = "hashicorp/http"
       version = "~> 3.0"
     }
   }
@@ -30,9 +30,9 @@ resource "aws_vpc" "test" {
   enable_dns_support   = true
 
   tags = {
-    Name      = "devsecops-test-vpc"
-    Project   = "DevSecOps Pipeline"
-    ManagedBy = "Terraform"
+    Name        = "devsecops-test-vpc"
+    Project     = "DevSecOps Pipeline"
+    ManagedBy   = "Terraform"
   }
 }
 
@@ -74,7 +74,6 @@ resource "aws_security_group" "web_sg" {
 output "my_detected_ip" {
   value = "${chomp(data.http.my_ip.response_body)}/32"
 }
-# --- DODAJ TO NA KOŃCU PLIKU ---
 
 # Network ACL - Warstwa Subnetu (Stateless Firewall)
 resource "aws_network_acl" "main" {
