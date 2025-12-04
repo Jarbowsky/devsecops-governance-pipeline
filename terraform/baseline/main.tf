@@ -8,7 +8,7 @@ terraform {
     }
     # Dodajemy providera HTTP
     http = {
-      source = "hashicorp/http"
+      source  = "hashicorp/http"
       version = "~> 3.0"
     }
   }
@@ -30,9 +30,9 @@ resource "aws_vpc" "test" {
   enable_dns_support   = true
 
   tags = {
-    Name        = "devsecops-test-vpc"
-    Project     = "DevSecOps Pipeline"
-    ManagedBy   = "Terraform"
+    Name      = "devsecops-test-vpc"
+    Project   = "DevSecOps Pipeline"
+    ManagedBy = "Terraform"
   }
 }
 
@@ -73,4 +73,60 @@ resource "aws_security_group" "web_sg" {
 # Outputy (bez zmian, plus opcjonalnie info jakie IP pobrał)
 output "my_detected_ip" {
   value = "${chomp(data.http.my_ip.response_body)}/32"
+}
+# --- DODAJ TO NA KOŃCU PLIKU ---
+
+# Network ACL - Warstwa Subnetu (Stateless Firewall)
+resource "aws_network_acl" "main" {
+  vpc_id = aws_vpc.test.id
+  # Powiążemy to z podsieciami później, na razie tworzymy sam zestaw reguł
+
+  # --- INBOUND (Ruch przychodzący) ---
+
+  # 1. SSH tylko z Twojego IP (Priorytet 100)
+  ingress {
+    protocol   = "tcp"
+    rule_no    = 100
+    action     = "allow"
+    cidr_block = "${chomp(data.http.my_ip.response_body)}/32" # Dynamiczne IP
+    from_port  = 22
+    to_port    = 22
+  }
+
+  # 2. HTTP z całego świata (Priorytet 200)
+  ingress {
+    protocol   = "tcp"
+    rule_no    = 200
+    action     = "allow"
+    cidr_block = "0.0.0.0/0"
+    from_port  = 80
+    to_port    = 80
+  }
+
+  # --- OUTBOUND (Ruch wychodzący - PUŁAPKA STATELESS) ---
+
+  # 1. Ephemeral Ports (Porty efemeryczne) - KRYTYCZNE DLA ODPOWIEDZI
+  # Bez tego serwer odbierze SSH, ale odpowiedź nie wyjdzie do Twojego terminala.
+  egress {
+    protocol   = "tcp"
+    rule_no    = 100
+    action     = "allow"
+    cidr_block = "0.0.0.0/0"
+    from_port  = 1024
+    to_port    = 65535
+  }
+
+  # 2. HTTP/HTTPS na zewnątrz (np. yum update)
+  egress {
+    protocol   = "tcp"
+    rule_no    = 200
+    action     = "allow"
+    cidr_block = "0.0.0.0/0"
+    from_port  = 80
+    to_port    = 443
+  }
+
+  tags = {
+    Name = "devsecops-nacl"
+  }
 }
