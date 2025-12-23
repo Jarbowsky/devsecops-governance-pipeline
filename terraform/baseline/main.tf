@@ -228,3 +228,60 @@ output "ecr_repository_url" {
   description = "The URL of the ECR repository"
   value       = aws_ecr_repository.hello_devsecops.repository_url
 }
+
+# --- IAM FOR GITHUB ACTIONS ---
+
+# Create a dedicated system user for CI/CD automation
+resource "aws_iam_user" "github_actions" {
+  name = "github-actions-bot"
+  tags = {
+    Project = "DevSecOps Pipeline"
+  }
+}
+
+# Generate access keys for the GitHub Actions user
+# Note: In production, consider using OIDC (OpenID Connect) for keyless authentication
+resource "aws_iam_access_key" "github_actions" {
+  user = aws_iam_user.github_actions.name
+}
+
+# Inline policy to allow ECR login and image push
+resource "aws_iam_user_policy" "ecr_push_policy" {
+  name = "ECRPushPolicy"
+  user = aws_iam_user.github_actions.name
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid    = "AllowECRLogin"
+        Effect = "Allow"
+        Action = "ecr:GetAuthorizationToken"
+        Resource = "*"
+      },
+      {
+        Sid    = "AllowECRPush"
+        Effect = "Allow"
+        Action = [
+          "ecr:BatchCheckLayerAvailability",
+          "ecr:CompleteLayerUpload",
+          "ecr:InitiateLayerUpload",
+          "ecr:PutImage",
+          "ecr:UploadLayerPart"
+        ]
+        Resource = aws_ecr_repository.hello_devsecops.arn
+      }
+    ]
+  })
+}
+
+# Outputs to retrieve keys (Sensitive - use with caution)
+output "github_actions_access_key" {
+  value     = aws_iam_access_key.github_actions.id
+  sensitive = true
+}
+
+output "github_actions_secret_key" {
+  value     = aws_iam_access_key.github_actions.secret
+  sensitive = true
+}
