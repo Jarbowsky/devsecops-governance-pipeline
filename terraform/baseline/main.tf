@@ -19,17 +19,16 @@ provider "aws" {
 
 # --- DATA SOURCES ---
 
-# Fetch current public IP for access restrictions
+# Fetch the current public IP for restricted security group access
 data "http" "my_ip" {
   url = "http://ipv4.icanhazip.com"
 }
 
-# Get current AWS account ID for unique resource naming
+# Get current AWS account identity for unique resource naming
 data "aws_caller_identity" "current" {}
 
 # --- NETWORKING (VPC & SUBNETS) ---
 
-# Main VPC for DevSecOps Lab
 resource "aws_vpc" "test" {
   cidr_block           = "10.0.0.0/16"
   enable_dns_hostnames = true
@@ -50,7 +49,7 @@ resource "aws_security_group" "web_sg" {
   description = "Security group for web server with restricted SSH access"
   vpc_id      = aws_vpc.test.id
 
-  # Allow SSH access from current public IP only
+  # Allow SSH access from management IP only
   ingress {
     description = "SSH from Management IP"
     from_port   = 22
@@ -59,7 +58,7 @@ resource "aws_security_group" "web_sg" {
     cidr_blocks = ["${chomp(data.http.my_ip.response_body)}/32"]
   }
 
-  # Allow HTTP traffic from anywhere
+  # Allow standard HTTP traffic
   ingress {
     description = "HTTP from Internet"
     from_port   = 80
@@ -86,9 +85,7 @@ resource "aws_security_group" "web_sg" {
 resource "aws_network_acl" "main" {
   vpc_id = aws_vpc.test.id
 
-  # --- Inbound Rules ---
-
-  # Rule 100: SSH from Management IP
+  # Inbound: SSH from management IP
   ingress {
     protocol   = "tcp"
     rule_no    = 100
@@ -98,7 +95,7 @@ resource "aws_network_acl" "main" {
     to_port    = 22
   }
 
-  # Rule 200: HTTP from Internet
+  # Inbound: HTTP from Internet
   ingress {
     protocol   = "tcp"
     rule_no    = 200
@@ -108,9 +105,7 @@ resource "aws_network_acl" "main" {
     to_port    = 80
   }
 
-  # --- Outbound Rules ---
-
-  # Rule 100: Return traffic to ephemeral ports (Required for stateless/NACL)
+  # Outbound: Return traffic to ephemeral ports
   egress {
     protocol   = "tcp"
     rule_no    = 100
@@ -120,7 +115,7 @@ resource "aws_network_acl" "main" {
     to_port    = 65535
   }
 
-  # Rule 200: Allow HTTP/HTTPS outbound (e.g., for package updates)
+  # Outbound: HTTP/HTTPS for updates
   egress {
     protocol   = "tcp"
     rule_no    = 200
@@ -135,19 +130,17 @@ resource "aws_network_acl" "main" {
   }
 }
 
-# --- CLOUDTRAIL (AUDITING) ---
+# --- AUDITING & LOGGING (CLOUDTRAIL) ---
 
-# S3 Bucket for storing audit logs
 resource "aws_s3_bucket" "audit_logs" {
   bucket        = "devsecops-audit-logs-${data.aws_caller_identity.current.account_id}"
-  force_destroy = true # Only for lab environments to ease cleanup
+  force_destroy = true 
 
   tags = {
     Name = "audit-logs-storage"
   }
 }
 
-# Policy allowing CloudTrail service to write to the bucket
 resource "aws_s3_bucket_policy" "audit_logs_policy" {
   bucket = aws_s3_bucket.audit_logs.id
   policy = jsonencode({
@@ -156,39 +149,72 @@ resource "aws_s3_bucket_policy" "audit_logs_policy" {
       {
         Sid    = "AWSCloudTrailAclCheck"
         Effect = "Allow"
-        Principal = {
-          Service = "cloudtrail.amazonaws.com"
-        }
+        Principal = { Service = "cloudtrail.amazonaws.com" }
         Action   = "s3:GetBucketAcl"
         Resource = aws_s3_bucket.audit_logs.arn
       },
       {
         Sid    = "AWSCloudTrailWrite"
         Effect = "Allow"
-        Principal = {
-          Service = "cloudtrail.amazonaws.com"
-        }
+        Principal = { Service = "cloudtrail.amazonaws.com" }
         Action   = "s3:PutObject"
         Resource = "${aws_s3_bucket.audit_logs.arn}/prefix/AWSLogs/${data.aws_caller_identity.current.account_id}/*"
         Condition = {
-          StringEquals = {
-            "s3:x-amz-acl" = "bucket-owner-full-control"
-          }
+          StringEquals = { "s3:x-amz-acl" = "bucket-owner-full-control" }
         }
       }
     ]
   })
 }
 
-# Enable CloudTrail logging
 resource "aws_cloudtrail" "main_trail" {
   name                          = "main-audit-trail"
   s3_bucket_name                = aws_s3_bucket.audit_logs.id
   s3_key_prefix                 = "prefix"
   include_global_service_events = true
   enable_log_file_validation    = true
+  depends_on                    = [aws_s3_bucket_policy.audit_logs_policy]
+}
 
-  depends_on = [aws_s3_bucket_policy.audit_logs_policy]
+# --- ECR REPOSITORY (CONTAINER REGISTRY) ---
+
+resource "aws_ecr_repository" "hello_devsecops" {
+  name                 = "hello-devsecops"
+  image_tag_mutability = "MUTABLE"
+
+  # Enforce vulnerability scanning on every image push
+  image_scanning_configuration {
+    scan_on_push = true 
+  }
+
+  # Encrypt images at rest using AWS managed keys
+  encryption_configuration {
+    encryption_type = "AES256"
+  }
+
+  tags = {
+    Project = "DevSecOps Pipeline"
+  }
+}
+
+# Lifecycle Policy: Retain only the 5 most recent images to optimize storage and costs
+resource "aws_ecr_lifecycle_policy" "cleanup" {
+  repository = aws_ecr_repository.hello_devsecops.name
+
+  policy = jsonencode({
+    rules = [{
+      rulePriority = 1
+      description  = "Keep last 5 images"
+      selection = {
+        tagStatus     = "any"
+        countType     = "imageCountMoreThan"
+        countNumber   = 5
+      }
+      action = {
+        type = "expire"
+      }
+    }]
+  })
 }
 
 # --- OUTPUTS ---
@@ -198,12 +224,7 @@ output "vpc_id" {
   value       = aws_vpc.test.id
 }
 
-output "management_ip" {
-  description = "Detected public IP used for SSH access"
-  value       = "${chomp(data.http.my_ip.response_body)}/32"
-}
-
-output "cloudtrail_bucket" {
-  description = "S3 Bucket name for audit logs"
-  value       = aws_s3_bucket.audit_logs.bucket
+output "ecr_repository_url" {
+  description = "The URL of the ECR repository"
+  value       = aws_ecr_repository.hello_devsecops.repository_url
 }
